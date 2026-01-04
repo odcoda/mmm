@@ -1,0 +1,21 @@
+{
+  "name": "mmix-emulator",
+  "version": "1.0.0",
+  "description": "Interactive web emulator for Knuth's MMIX system",
+  "main": "mmix.js",
+  "scripts": {
+    "test": "node --test tests/memory.test.js",
+    "test:browser": "node --test tests/browser.test.js",
+    "test:all": "node --test tests/",
+    "test:watch": "node --test --watch tests/"
+  },
+  "keywords": [
+    "mmix",
+    "knuth",
+    "emulator"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer": "^24.34.0"
+  }
+}

@@ -3,43 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game</title>
+    <title>MMIX Emulator</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #222;
-            font-family: monospace;
+        * {
+            box-sizing: border-box;
         }
 
-        #gameContainer {
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a2e;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #eee;
+        }
+
+        h1 {
             text-align: center;
+            color: #00ff88;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background-color: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .panel h2 {
+            margin: 0 0 15px 0;
+            color: #00ff88;
+            font-size: 14px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 8px;
+        }
+
+        #canvasPanel {
+            flex: 1;
         }
 
         canvas {
-            border: 2px solid #444;
-            background-color: #000;
+            background-color: #0a0a14;
             display: block;
-            margin: 20px auto;
+            width: 100%;
+            border-radius: 4px;
         }
 
-        #info {
+        .sidebar {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Inspector input */
+        .inspector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .inspector input {
+            flex: 1;
+            background-color: #0a0a14;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            padding: 8px 12px;
             color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .inspector input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .inspector button {
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: #00ff88;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .inspector button:hover {
+            background-color: #1a4a7a;
+        }
+
+        /* Register display */
+        .register-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .register-item {
+            display: flex;
+            padding: 4px 8px;
+            background-color: #0a0a14;
+            border-radius: 2px;
+        }
+
+        .register-item.highlight {
+            background-color: #1a4a4a;
+            border: 1px solid #00ff88;
+        }
+
+        .register-name {
+            color: #888;
+            min-width: 35px;
+        }
+
+        .register-value {
+            color: #ffcc00;
+            font-size: 11px;
+        }
+
+        /* Memory display */
+        .memory-view {
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .memory-row {
+            display: flex;
+            padding: 3px 0;
+            border-bottom: 1px solid #0a0a14;
+        }
+
+        .memory-addr {
+            color: #888;
+            min-width: 130px;
+        }
+
+        .memory-hex {
+            color: #ff6b6b;
+            min-width: 150px;
+        }
+
+        .memory-ascii {
+            color: #888;
+        }
+
+        /* Status bar */
+        #status {
+            text-align: center;
+            padding: 10px;
+            background-color: #0a0a14;
+            border-radius: 4px;
             margin-top: 10px;
+        }
+
+        .status-item {
+            display: inline-block;
+            margin: 0 15px;
+        }
+
+        .status-label {
+            color: #888;
+        }
+
+        .status-value {
+            color: #00ff88;
+        }
+
+        /* Inspect result */
+        #inspectResult {
+            background-color: #0a0a14;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            min-height: 60px;
+        }
+
+        .result-label {
+            color: #888;
+        }
+
+        .result-value {
+            color: #ffcc00;
+            font-size: 14px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            background-color: #0f3460;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .controls button:hover {
+            background-color: #1a4a7a;
+        }
+
+        .controls button.primary {
+            background-color: #00aa66;
+        }
+
+        .controls button.primary:hover {
+            background-color: #00cc77;
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="info">FPS: <span id="fps">0</span></div>
+    <h1>MMIX Emulator</h1>
+
+    <div class="container">
+        <div id="canvasPanel" class="panel">
+            <h2>Machine State Visualization</h2>
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+            <div id="status">
+                <span class="status-item">
+                    <span class="status-label">PC:</span>
+                    <span class="status-value" id="pcValue">0000000000000000</span>
+                </span>
+                <span class="status-item">
+                    <span class="status-label">FPS:</span>
+                    <span class="status-value" id="fps">0</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <h2>Inspector</h2>
+                <div class="inspector">
+                    <input type="text" id="inspectInput" placeholder="$0, rA, or #1000 (memory)">
+                    <button onclick="inspect()">Inspect</button>
+                </div>
+                <div id="inspectResult">
+                    <div class="result-label">Enter a register ($0-$255, rA-rZZ) or memory address (#addr)</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Controls</h2>
+                <div class="controls">
+                    <button class="primary" onclick="loadExample()">Load Example</button>
+                    <button onclick="mmix.reset(); updateDisplay();">Reset</button>
+                    <button onclick="randomizeRegisters()">Randomize</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>General Registers ($0-$15)</h2>
+                <div id="registers" class="register-grid"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Special Registers</h2>
+                <div id="specialRegisters" class="register-grid"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Memory (Used Locations)</h2>
+                <div id="memoryView" class="memory-view"></div>
+            </div>
+        </div>
     </div>
 
-    <script src="game.js"></script>
     <script src="mmix.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
